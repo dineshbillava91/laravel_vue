@@ -4,6 +4,9 @@ namespace App\Exceptions;
 
 use Exception;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
+use Illuminate\Database\QueryException;
+use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
+use Mail;
 
 class Handler extends ExceptionHandler
 {
@@ -34,6 +37,13 @@ class Handler extends ExceptionHandler
      */
     public function report(Exception $exception)
     {
+        if ($exception instanceof QueryException) {
+            Mail::raw($exception->getMessage(), function ($message) {
+                $message->to('dinesh.b@mindfiresolutions.com')
+                  ->subject('Database configuration error');
+            });
+        }
+
         parent::report($exception);
     }
 
@@ -46,6 +56,10 @@ class Handler extends ExceptionHandler
      */
     public function render($request, Exception $exception)
     {
+        if ($exception instanceof MethodNotAllowedHttpException) {
+            return abort('405');
+        }
+
         return parent::render($request, $exception);
     }
 }

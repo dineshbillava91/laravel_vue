@@ -19,9 +19,11 @@
     <link href="/plugins/bower_components/chartist/dist/chartist.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/plugins/bower_components/chartist-plugin-tooltips/dist/chartist-plugin-tooltip.css">
     <!-- Custom CSS -->
-    <link href="/css/style.min.css" rel="stylesheet">
-    <link href="/css/select2.min.css" rel="stylesheet">
-    <link href="/css/fullcalendar.min.css" rel="stylesheet">
+    <link href="{{ mix('/css/style.min.css') }}" rel="stylesheet">
+    <link href="{{ mix('/css/fontawesome-all.css') }}" rel="stylesheet">
+    <link href="{{ mix('/css/themify-icons.css') }}" rel="stylesheet">
+    <link href="{{ mix('/css/select2.min.css') }}" rel="stylesheet">
+    <link href="{{ mix('/css/fullcalendar.min.css') }}" rel="stylesheet">
 </head>
 
 <style>
@@ -251,25 +253,18 @@
     <!-- ============================================================== -->
     <!-- All Jquery -->
     <!-- ============================================================== -->
-    <script src="/plugins/bower_components/jquery/dist/jquery.min.js"></script>
+    <script src="{{ mix('/js/jquery.min.js') }}"></script>
     <!-- Bootstrap tether Core JavaScript -->
-    <script src="/js/bootstrap.min.js"></script>
-    <script src="/js/app-style-switcher.js"></script>
-    <script src="/plugins/bower_components/jquery-sparkline/jquery.sparkline.min.js"></script>
+    <script src="{{ mix('/js/bootstrap.min.js') }}"></script>
+    <script src="{{ mix('/js/app-style-switcher.js') }}"></script>
     <!--Wave Effects -->
-    <script src="/js/waves.js"></script>
+    <script src="{{ mix('/js/waves.js') }}"></script>
     <!--Menu sidebar -->
-    <script src="/js/sidebarmenu.js"></script>
+    <script src="{{ mix('/js/sidebarmenu.js') }}"></script>
     <!--Custom JavaScript -->
-    <script src="/js/custom.js"></script>
+    <script src="{{ mix('/js/custom.js') }}"></script>
     <!--This page JavaScript -->
-    <!--chartis chart-->
-    <script src="/plugins/bower_components/chartist/dist/chartist.min.js"></script>
-    <script src="/plugins/bower_components/chartist-plugin-tooltips/dist/chartist-plugin-tooltip.min.js"></script>
-    <script src="/js/pages/dashboards/dashboard1.js"></script>
-    <script src="/js/select2.min.js"></script>
-    <script src="/js/moment.min.js"></script>
-    <script src="/js/fullcalendar.min.js"></script>
+    <script src="{{ mix('/js/select2.min.js') }}"></script>
 
     <script>
     $('#speaker_id').select2({
@@ -292,393 +287,14 @@
         selectOnClose: false
     });
 
-    function load_speakers(){
-        $.ajax({
-            url: "{{ route('load_speakers') }}",
-            method: "POST",
-            data: { "_token": "{{ csrf_token() }}" },
-            success: function(data){
-                if(data.length > 0){
-                    var counter = 0;
-                    var table_content = "";
-                    $.each(data, function(key, speaker){
-                        counter++;
-
-                        var buttons = '<a href="speaker/edit/'+speaker.id+'" class="btn btn-info"><i class="fa fa-pencil-alt" aria-hidden="true"></i> Edit</a>&nbsp;&nbsp;<a href="speaker/delete/'+speaker.id+'" class="btn btn-danger"><i class="fa fa-trash" aria-hidden="true"></i> Delete</a>';
-
-                        var table_row = "";
-                        table_row = "<tr>";
-                        table_row += "<td class='text-center'>"+counter+"</td>";
-                        table_row += "<td>"+speaker.name+"</td>";
-                        table_row += "<td class='text-center'>"+buttons+"</td>";
-                        table_row += "</tr>";
-
-                        table_content += table_row;
-                    });
-
-                    $('#table_body').html(table_content);
-                } else {
-                    $('#table_body').html("<tr><td class='text-center' colspan='3'>No Speakers Found !!!</td></tr>");
-                }
-            },
-            error: function(e){
-
-            }
-        });
-    }
-
-    function load_events(){
-        $.ajax({
-            url: "{{ route('load_events') }}",
-            method: "POST",
-            data: { "_token": "{{ csrf_token() }}" },
-            success: function(data){
-                if(data.length > 0){
-                    var counter = 0;
-                    var table_content = "";
-                    $.each(data, function(key, event){
-                        counter++;
-
-                        var buttons = '<a href="event/edit/'+event.id+'" class="btn btn-info"><i class="fa fa-pencil-alt" aria-hidden="true"></i> Edit</a>&nbsp;&nbsp;<a href="event/delete/'+event.id+'" class="btn btn-danger"><i class="fa fa-trash" aria-hidden="true"></i> Delete</a>';
-
-                        var table_row = "";
-                        table_row = "<tr>";
-                        table_row += "<td class='text-center'>"+counter+"</td>";
-                        table_row += "<td>"+event.name+"</td>";
-                        table_row += "<td>"+event.location+"</td>";
-                        table_row += "<td>"+event.date+"</td>";
-                        table_row += "<td>"+event.time+"</td>";
-                        table_row += "<td class='text-center'>"+buttons+"</td>";
-                        table_row += "</tr>";
-
-                        table_content += table_row;
-                    });
-
-                    $('#table_body').html(table_content);
-                } else {
-                    $('#table_body').html("<tr><td class='text-center' colspan='6'>No Events Found !!!</td></tr>");
-                }
-            },
-            error: function(e){
-
-            }
-        });
-    }
-
-    function load_tags(){
-        $.ajax({
-            url: "{{ route('load_tags') }}",
-            method: "POST",
-            data: { "_token": "{{ csrf_token() }}" },
-            success: function(data){
-                if(data.length > 0){
-                    var counter = 0;
-                    var table_content = "";
-                    $.each(data, function(key, tag){
-                        counter++;
-
-                        var buttons = '<a href="tag/edit/'+tag.id+'" class="btn btn-info"><i class="fa fa-pencil-alt" aria-hidden="true"></i> Edit</a>&nbsp;&nbsp;<a href="tag/delete/'+tag.id+'" class="btn btn-danger"><i class="fa fa-trash" aria-hidden="true"></i> Delete</a>';
-
-                        var table_row = "";
-                        table_row = "<tr>";
-                        table_row += "<td class='text-center'>"+counter+"</td>";
-                        table_row += "<td>"+tag.name+"</td>";
-                        table_row += "<td class='text-center'>"+buttons+"</td>";
-                        table_row += "</tr>";
-
-                        table_content += table_row;
-                    });
-
-                    $('#table_body').html(table_content);
-                } else {
-                    $('#table_body').html("<tr><td class='text-center' colspan='3'>No Tags Found !!!</td></tr>");
-                }
-            },
-            error: function(e){
-
-            }
-        });
-    }
-
-    function load_ratings(){
-        $.ajax({
-            url: "{{ route('load_ratings') }}",
-            method: "POST",
-            data: { "_token": "{{ csrf_token() }}" },
-            success: function(data){
-                if(data.length > 0){
-                    var counter = 0;
-                    var table_content = "";
-                    $.each(data, function(key, rating){
-                        counter++;
-
-                        var buttons = '<a href="rating/edit/'+rating.id+'" class="btn btn-info"><i class="fa fa-pencil-alt" aria-hidden="true"></i> Edit</a>&nbsp;&nbsp;<a href="rating/delete/'+rating.id+'" class="btn btn-danger"><i class="fa fa-trash" aria-hidden="true"></i> Delete</a>';
-
-                        var table_row = "";
-                        table_row = "<tr>";
-                        table_row += "<td class='text-center'>"+counter+"</td>";
-                        table_row += "<td>"+rating.name+"</td>";
-                        table_row += "<td>"+rating.value+"</td>";
-                        table_row += "<td class='text-center'>"+buttons+"</td>";
-                        table_row += "</tr>";
-
-                        table_content += table_row;
-                    });
-
-                    $('#table_body').html(table_content);
-                } else {
-                    $('#table_body').html("<tr><td class='text-center' colspan='4'>No Ratings Found !!!</td></tr>");
-                }
-            },
-            error: function(e){
-
-            }
-        });
-    }
-
-    function load_participant_talks(){
-        @php($cur_date=date('Y-m-d'))
-        $.ajax({
-            url: "{{ route('load_participant_talks') }}",
-            method: "POST",
-            data: { "_token": "{{ csrf_token() }}" },
-            success: function(data){
-                
-                var events = [];
-                $.each(data, function(key, talk){
-                    var event = new Object();
-                    event.title = talk.name;
-                    event.start = talk.event.date+" "+talk.event.time;
-                    event.end = talk.event.date+" "+talk.event.time;
-                    event.url = "/participants/show/"+talk.id;
-                    
-                    events[key] = event;
-                });
-
-
-
-                $('#calendar').fullCalendar({
-                    header: {
-                        left: 'prev,next today',
-                        center: 'title',
-                        right: 'month,agendaWeek,agendaDay'
-                    },
-                    defaultDate: '{{ $cur_date }}',
-                    defaultView: 'month',
-                    editable: false,
-                    events: events,
-                });
-            },
-            error: function(e){
-
-            }
-        });
-    }
-
-    function load_talks(){
-        var speaker = $('#speaker').val();
-        var tag = $('#tag').val();
-
-        $.ajax({
-            url: "{{ route('search_talk') }}",
-            method: "POST",
-            data: { "_token": "{{ csrf_token() }}", speaker, tag },
-            success: function(data){
-                if(data.talks.length > 0){
-                    var counter = 0;
-                    var table_content = "";
-                    $('#table_body').empty();
-                    $.each(data.talks, function(key, talk){
-                        counter++;
-                        var rating = "";
-
-                        if(talk.rating != null){
-                            rating = parseFloat(talk.rating);
-                        }
-
-                        var selected_participants = [];
-
-                        var talk_participants = JSON.parse(talk.participants);
-                        $.each(talk_participants, function(key,participant_stored){
-                            $.each(data.participants, function(key,participant){
-                                if(participant.id == participant_stored){
-                                    selected_participants.push(participant.name);
-                                }
-                            });
-                        });
-
-                        var selected_tags = [];
-
-                        var talk_tags = JSON.parse(talk.tags);
-                        $.each(talk_tags, function(key,tag_stored){
-                            $.each(data.tags, function(key,tag){
-                                if(tag.id == tag_stored){
-                                    selected_tags.push(tag.name);
-                                }
-                            });
-                        });
-
-                        var buttons = '<a href="talks/edit/'+talk.id+'" class="btn btn-info"><i class="fa fa-pencil-alt" aria-hidden="true"></i> Edit</a><a href="talks/delete/'+talk.id+'" class="btn btn-danger"><i class="fa fa-trash" aria-hidden="true"></i> Delete</a>';
-
-                        var table_row = "";
-                        table_row = "<tr>";
-                        table_row += "<td class='text-center'>"+counter+"</td>";
-                        table_row += "<td>"+talk.name+"</td>";
-                        table_row += "<td>"+talk.title+"</td>";
-                        table_row += "<td>"+talk.description+"</td>";
-                        table_row += "<td>"+talk.speaker.name+"</td>";
-                        table_row += "<td>"+talk.event.name+"</td>";
-                        table_row += "<td>"+selected_participants.join(', ')+"</td>";
-                        table_row += "<td>"+selected_tags.join(', ')+"</td>";
-                        table_row += "<td class='text-center'>"+rating+"</td>";
-                        table_row += "<td class='text-center'>"+buttons+"</td>";
-                        table_row += "</tr>";
-
-                        table_content += table_row;
-                    });
-
-                    $('#table_body').html(table_content);
-                } else {
-                    $('#table_body').html("<tr><td class='text-center' colspan='10'>No Talks Found !!!</td></tr>");
-                }
-            },
-            error: function(){
-                $('#table_body').html("<tr><td class='text-center' colspan='10'>No Talks Found !!!</td></tr>");
-            }
-        });
-    }
-
-    function load_topspeakers(){
-        var search_type = $('#search_type').val(); 
-
-        $.ajax({
-            url: "{{ route('load_topspeaker') }}",
-            method: "POST",
-            data: { "_token": "{{ csrf_token() }}", search_type },
-            success: function(data){
-                if(data.length > 0){
-                    var counter = 0;
-                    var table_content = "";
-                    $('#table_body').empty();
-
-                    $.each(data, function(key, top){
-                        counter++;
-                        var table_row = "";
-                        table_row = "<tr>";
-                        table_row += "<td class='text-center'>"+counter+"</td>";
-                        table_row += "<td>"+top.speaker.name+"</td>";
-                        table_row += "<td class='task'>"+top.name+"</td>";
-                        table_row += "<td class='text-center total_task'>"+top.total_talks+"</td>";
-                        table_row += "<td class='text-center rating'>"+parseFloat(top.rating)+"</td>";
-
-                        table_row += "</tr>";
-
-                        table_content += table_row;
-                    });
-
-                    $('#table_body').html(table_content);
-                } else {
-                    var colspan = 4;
-                    if(search_type == 1){
-                        colspan = 3;
-                    }
-
-                    $('#table_body').html("<tr><td class='text-center' colspan='"+colspan+"'>No Speakers Found !!!</td></tr>");
-                }
-
-                if(search_type == 1){
-                    $('.task').hide();
-                    $('.rating').hide();
-                    $('.total_task').show();
-                } else {
-                    $('.task').show();
-                    $('.rating').show();
-                    $('.total_task').hide();
-                }
-            },
-            error: function(e){
-            }
-        });
-    }
-
-    function load_sameday_talks(){
-        $.ajax({
-            url: "{{ route('load_sameday_talks') }}",
-            method: "POST",
-            data: { "_token": "{{ csrf_token() }}" },
-            success: function(data){
-                if(data.length > 0){
-                    var counter = 0;
-                    var table_content = "";
-                    $('#table_body').empty();
-
-                    $.each(data, function(key, talk){
-                        counter++;
-                        var table_row = "";
-                        table_row = "<tr>";
-                        table_row += "<td class='text-center'>"+counter+"</td>";
-                        table_row += "<td>"+talk.speaker.name+"</td>";
-                        table_row += "<td class='text-center'>"+talk.date+"</td>";
-                        table_row += "<td class='text-center'>"+talk.total_events+"</td>";
-                        table_row += "</tr>";
-
-                        table_content += table_row;
-                    });
-                    
-                    $('#table_body').html(table_content);
-                } else {
-                    var colspan = 4;
-                    if(search_type == 1){
-                        colspan = 3;
-                    }
-
-                    $('#table_body').html("<tr><td class='text-center' colspan='"+colspan+"'>No Speakers Found !!!</td></tr>");
-                }
-            },
-            error: function(e){
-            }
-        });
-    }
-
-    function load_event_talks(){
-        $.ajax({
-            url: "{{ route('load_event_talks') }}",
-            method: "POST",
-            data: { "_token": "{{ csrf_token() }}" },
-            success: function(data){
-                console.log(data);
-                if(data.length > 0){
-                    var counter = 0;
-                    var table_content = "";
-                    $('#table_body').empty();
-
-                    $.each(data, function(key, talk){
-                        counter++;
-                        var table_row = "";
-                        table_row = "<tr>";
-                        table_row += "<td class='text-center'>"+counter+"</td>";
-                        table_row += "<td>"+talk.event.name+"</td>";
-                        table_row += "<td class='text-center'>"+talk.total_talks+"</td>";
-                        table_row += "</tr>";
-
-                        table_content += table_row;
-                    });
-                    
-                    $('#table_body').html(table_content);
-                } else {
-                    $('#table_body').html("<tr><td class='text-center' colspan='3'>No Talks Found !!!</td></tr>");
-                }
-            },
-            error: function(e){
-            }
-        });
-    }
-
     @error('rating_id')
         $('#ratingModal').modal('show');
     @enderror
+    
+    window.csrf_token = "{{ csrf_token() }}"
     </script>
 
+    <script src="{{ mix('/js/app.js') }}"></script>
 </body>
 
 </html>

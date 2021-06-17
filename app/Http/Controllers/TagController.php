@@ -2,8 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Tag;
+use App\Models\Tag;
 use Illuminate\Http\Request;
+use App\Utilities\GeneralUtility;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class TagController extends Controller
 {
@@ -37,11 +42,7 @@ class TagController extends Controller
      */
     public function store(Request $request)
     {
-        $validatedData = request()->validate([
-            'name' => 'required|unique:rating'
-        ]);
-
-        Tag::create($validatedData);
+        Tag::create($this->validateTag());
         return redirect($this->home)->with('success', 'Tag Added Successfully !!!');
     }
 
@@ -64,7 +65,21 @@ class TagController extends Controller
      */
     public function edit($id)
     {
-        $tag = Tag::findOrFail($id);
+        try{
+            $tag = Tag::findOrFail($id);
+        } catch (ModelNotFoundException $exception) {
+            return view('errors.notfound');
+        } catch (BadRequestHttpException $exception) {
+            throw $exception;
+        } catch (AccessDeniedHttpException $exception) {
+            throw $exception;
+        } catch (HttpException $exception) {
+            throw $exception;
+        } catch (\Exception $exception) {
+            GeneralUtility::logException($exception, __FUNCTION__);
+            // Throwing Internal Server Error Response In case of Unknown Errors.
+            throw new HttpException(500, ErrorConstant::INTERNAL_ERR);
+        }
 
         return view('tag.edit', compact('tag'));
     }
@@ -78,11 +93,7 @@ class TagController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $validatedData = request()->validate([
-            'name' => 'required|unique:rating'
-        ]);
-
-        Tag::whereId($id)->update($validatedData);
+        Tag::whereId($id)->update($this->validateTag());
 
         return redirect($this->home)->with('success', 'Tag Updated Successfully !!!');
     }
@@ -95,8 +106,22 @@ class TagController extends Controller
      */
     public function destroy($id)
     {
-        $tag = Tag::findOrFail($id);
-        $tag->delete();
+        try{
+            $tag = Tag::findOrFail($id);
+            $tag->delete();
+        } catch (ModelNotFoundException $exception) {
+            return view('errors.notfound');
+        } catch (BadRequestHttpException $exception) {
+            throw $exception;
+        } catch (AccessDeniedHttpException $exception) {
+            throw $exception;
+        } catch (HttpException $exception) {
+            throw $exception;
+        } catch (\Exception $exception) {
+            GeneralUtility::logException($exception, __FUNCTION__);
+            // Throwing Internal Server Error Response In case of Unknown Errors.
+            throw new HttpException(500, ErrorConstant::INTERNAL_ERR);
+        }
 
         return redirect($this->home)->with('success', 'Tag Deleted Successfully !!!');
     }
@@ -112,5 +137,17 @@ class TagController extends Controller
         $tags = Tag::all();
 
         return response()->json($tags, 200);
+    }
+
+    /**
+     * Validating the tag.
+     *
+     * @param  \App\Tag  $tag
+     * @return \Illuminate\Http\Response
+     */
+    public function validateTag(){
+        return request()->validate([
+            'name' => 'required|unique:tag'
+        ]);
     }
 }

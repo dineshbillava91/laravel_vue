@@ -44,7 +44,7 @@ class LoginController extends Controller
             return redirect('/participants');
         }
         else {
-            return redirect('/dashboard');
+            return redirect('/talks');
         }
     }
 }

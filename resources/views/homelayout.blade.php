@@ -11,10 +11,10 @@
 <!--===============================================================================================-->
 	<link rel="stylesheet" type="text/css" href="https://colorlib.com/etc/lf/Login_v1/fonts/font-awesome-4.7.0/css/font-awesome.min.css">
 <!--===============================================================================================-->
-	<link rel="stylesheet" type="text/css" href="css/select2.min.css">
+	<link rel="stylesheet" type="text/css" href="{{ mix('css/select2.min.css') }}">
 <!--===============================================================================================-->
-	<link rel="stylesheet" type="text/css" href="css/util.css">
-	<link rel="stylesheet" type="text/css" href="css/main.css">
+	<link rel="stylesheet" type="text/css" href="{{ mix('css/util.css') }}">
+	<link rel="stylesheet" type="text/css" href="{{ mix('css/main.css') }}">
 	<!-- Scripts -->
 <!--===============================================================================================-->
 </head>
@@ -24,13 +24,13 @@
 @yield ('content')
 
 <!--===============================================================================================-->
-<script src="js/jquery-3.2.1.min.js"></script>
+<script src="{{ mix('js/jquery-3.2.1.min.js') }}"></script>
 <!--===============================================================================================-->
-	<script src="bootstrap/dist/js/bootstrap.min.js"></script>
+	<script src="{{ mix('js/bootstrap.min.js') }}"></script>
 <!--===============================================================================================-->
-	<script src="js/select2.min.js"></script>
+	<script src="{{ mix('js/select2.min.js') }}"></script>
 <!--===============================================================================================-->
-	<script src="js/tilt.jquery.min.js"></script>
+	<script src="{{ mix('js/tilt.jquery.min.js') }}"></script>
 	<script src="{{ asset('js/app.js') }}"></script>
 	<script >
 		$('.js-tilt').tilt({

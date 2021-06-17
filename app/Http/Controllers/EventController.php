@@ -2,9 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Event;
+use App\Models\Event;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Utilities\GeneralUtility;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class EventController extends Controller
 {
@@ -38,12 +43,7 @@ class EventController extends Controller
      */
     public function store(Request $request)
     {
-        $validatedData = request()->validate([
-            'name' => 'required|unique:rating',
-            'location' => 'required',
-            'date' => 'required',
-            'time' => 'required'
-        ]);
+        $validatedData = $this->validateEvent();
 
         $validatedData['users_id'] = Auth::id();
 
@@ -70,7 +70,21 @@ class EventController extends Controller
      */
     public function edit($id)
     {
-        $event = Event::findOrFail($id);
+        try{
+            $event = Event::findOrFail($id);
+        } catch (ModelNotFoundException $exception) {
+            return view('errors.notfound');
+        } catch (BadRequestHttpException $exception) {
+            throw $exception;
+        } catch (AccessDeniedHttpException $exception) {
+            throw $exception;
+        } catch (HttpException $exception) {
+            throw $exception;
+        } catch (\Exception $exception) {
+            GeneralUtility::logException($exception, __FUNCTION__);
+            // Throwing Internal Server Error Response In case of Unknown Errors.
+            throw new HttpException(500, ErrorConstant::INTERNAL_ERR);
+        }
 
         return view('event.edit', compact('event'));
     }
@@ -84,16 +98,11 @@ class EventController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $validatedData = request()->validate([
-            'name' => 'required|unique:rating',
-            'location' => 'required',
-            'date' => 'required',
-            'time' => 'required'
-        ]);
+        $validatedData = $this->validateEvent();
 
         $validatedData['users_id'] = Auth::id();
 
-        Event::whereId($id)->update($validatedData);
+        Event::whereId($id)->update($this->validateEvent());
 
         return redirect($this->home)->with('success', 'Event Details Updated Successfully !!!');
     }
@@ -106,8 +115,22 @@ class EventController extends Controller
      */
     public function destroy($id)
     {
-        $event = Event::findOrFail($id);
-        $event->delete();
+        try{
+            $event = Event::findOrFail($id);
+            $event->delete();
+        } catch (ModelNotFoundException $exception) {
+            return view('errors.notfound');
+        } catch (BadRequestHttpException $exception) {
+            throw $exception;
+        } catch (AccessDeniedHttpException $exception) {
+            throw $exception;
+        } catch (HttpException $exception) {
+            throw $exception;
+        } catch (\Exception $exception) {
+            GeneralUtility::logException($exception, __FUNCTION__);
+            // Throwing Internal Server Error Response In case of Unknown Errors.
+            throw new HttpException(500, ErrorConstant::INTERNAL_ERR);
+        }
 
         return redirect($this->home)->with('success', 'Event Deleted Successfully !!!');
     }
@@ -123,5 +146,20 @@ class EventController extends Controller
         $events = Event::all();
 
         return response()->json($events, 200);
+    }
+
+    /**
+     * Validating the event.
+     *
+     * @param  \App\Event  $event
+     * @return \Illuminate\Http\Response
+     */
+    public function validateEvent(){
+        return request()->validate([
+            'name' => 'required|unique:event',
+            'location' => 'required',
+            'date' => 'required',
+            'time' => 'required'
+        ]);
     }
 }

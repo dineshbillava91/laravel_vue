@@ -2,20 +2,36 @@
 
 namespace App\Http\Controllers;
 
-use App\Talks;
-use App\Speaker;
-use App\Event;
-use App\Participants;
-use App\Tag;
-use App\User;
-use App\Rating;
-use App\User_ratings;
+use App\Models\Talks;
+use App\Models\Speaker;
+use App\Models\Event;
+use App\Models\Participants;
+use App\Models\Tag;
+use App\Models\User;
+use App\Models\Rating;
+use App\Models\User_ratings;
+use App\Services\ParticipantsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Utilities\GeneralUtility;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class ParticipantsController extends Controller
 {
     public $home = "/participants";
+
+    /**
+     * ParticipantsController constructor.
+     *
+     * @param TalksService $talksService
+     */
+    public function __construct(ParticipantsService $participantsService)
+    {
+        $this->participantsService = $participantsService;
+    }
 
     /**
      * Display a listing of the resource.
@@ -45,13 +61,7 @@ class ParticipantsController extends Controller
      */
     public function store(Request $request)
     {
-        $validatedData = request()->validate([
-            'name' => 'required|unique:rating',
-            'work_with' => 'required',
-            'address' => 'required'
-        ]);
-
-        Participants::create($validatedData);
+        Participants::create($this->validateParticipants());
         return redirect($this->home)->with('success', 'Participant Added Successfully !!!');
     }
 
@@ -63,18 +73,26 @@ class ParticipantsController extends Controller
      */
     public function show($id)
     {
-        $user_id = Auth::user()->id;
+        try{
+            $talk = Talks::with(['event'])->findOrFail($id);
+        } catch (ModelNotFoundException $exception) {
+            return view('errors.notfound');
+        } catch (BadRequestHttpException $exception) {
+            throw $exception;
+        } catch (AccessDeniedHttpException $exception) {
+            throw $exception;
+        } catch (HttpException $exception) {
+            throw $exception;
+        } catch (\Exception $exception) {
+            GeneralUtility::logException($exception, __FUNCTION__);
+            // Throwing Internal Server Error Response In case of Unknown Errors.
+            throw new HttpException(500, ErrorConstant::INTERNAL_ERR);
+        }
 
-        $talk = Talks::with(['event'])->findOrFail($id);
-        $participants = User::where('role_id',2)->get();
-        $tags = Tag::all();
-        $ratings = Rating::all();
-        $user_rating = User_ratings::where('user_id',$user_id)->where('talk_id',$id)->get();
+        $data = $this->participantsService->getAllData($id,$talk->speaker_id);
+        $data['talk'] = $talk;
 
-        $speaker_id = $talk->speaker_id;
-        $recommended_talks = Talks::with(['event'])->where('speaker_id',$speaker_id)->whereJsonContains('participants',(string)$user_id)->where('id', '!=' , $id)->take(5)->get();
-
-        return view('participants.show', compact('talk','participants','tags','ratings','user_rating','recommended_talks'));
+        return view('participants.show', $data);
     }
 
     /**
@@ -85,8 +103,12 @@ class ParticipantsController extends Controller
      */
     public function edit($id)
     {
-        $participant = Participants::findOrFail($id);
-
+        try{
+            $participant = Participants::findOrFail($id);
+        } catch (ModelNotFoundException $exception) {
+            return view('errors.notfound');
+        }
+ 
         return view('participants.edit', compact('participant'));
     }
 
@@ -99,13 +121,7 @@ class ParticipantsController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $validatedData = request()->validate([
-            'name' => 'required|unique:rating',
-            'work_with' => 'required',
-            'address' => 'required'
-        ]);
-
-        Participants::whereId($id)->update($validatedData);
+        Participants::whereId($id)->update($this->validateParticipants());
 
         return redirect($this->home)->with('success', 'Participant Updated Successfully !!!');
     }
@@ -118,8 +134,22 @@ class ParticipantsController extends Controller
      */
     public function destroy($id)
     {
-        $participants = Participants::findOrFail($id);
-        $participants->delete();
+        try{
+            $participants = Participants::findOrFail($id);
+            $participants->delete();
+        } catch (ModelNotFoundException $exception) {
+            return view('errors.notfound');
+        } catch (BadRequestHttpException $exception) {
+            throw $exception;
+        } catch (AccessDeniedHttpException $exception) {
+            throw $exception;
+        } catch (HttpException $exception) {
+            throw $exception;
+        } catch (\Exception $exception) {
+            GeneralUtility::logException($exception, __FUNCTION__);
+            // Throwing Internal Server Error Response In case of Unknown Errors.
+            throw new HttpException(500, ErrorConstant::INTERNAL_ERR);
+        }
 
         return redirect($this->home)->with('success', 'Participant Deleted Successfully !!!');
     }
@@ -155,5 +185,19 @@ class ParticipantsController extends Controller
 
         User_ratings::create($validatedData);
         return redirect($this->home)->with('success', 'Rating Submitted Successfully !!!');
+    }
+
+    /**
+     * Validating the Participant.
+     *
+     * @param  \App\Participants  $participants
+     * @return \Illuminate\Http\Response
+     */
+    public function validateParticipants(){
+        return request()->validate([
+            'name' => 'required|unique:participants',
+            'work_with' => 'required',
+            'address' => 'required'
+        ]);
     }
 }

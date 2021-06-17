@@ -2,9 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\User;
-use App\Rating;
+use App\Models\User;
+use App\Models\Rating;
 use Illuminate\Http\Request;
+use App\Utilities\GeneralUtility;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class RatingController extends Controller
 {
@@ -39,13 +44,7 @@ class RatingController extends Controller
      */
     public function store(Request $request)
     {
-
-        $validatedData = request()->validate([
-            'name' => 'required|unique:rating',
-            'value' => 'required'
-        ]);
-
-        Rating::create($validatedData);
+        Rating::create($this->validateRating());
         return redirect($this->home)->with('success', 'Rating Added Successfully !!!');
 
     }
@@ -68,7 +67,21 @@ class RatingController extends Controller
      */
     public function edit($id)
     {
-        $rating = Rating::findOrFail($id);
+        try{
+            $rating = Rating::findOrFail($id);
+        } catch (ModelNotFoundException $exception) {
+            return view('errors.notfound');
+        } catch (BadRequestHttpException $exception) {
+            throw $exception;
+        } catch (AccessDeniedHttpException $exception) {
+            throw $exception;
+        } catch (HttpException $exception) {
+            throw $exception;
+        } catch (\Exception $exception) {
+            GeneralUtility::logException($exception, __FUNCTION__);
+            // Throwing Internal Server Error Response In case of Unknown Errors.
+            throw new HttpException(500, ErrorConstant::INTERNAL_ERR);
+        }
 
         return view('rating.edit', compact('rating'));
     }
@@ -82,12 +95,7 @@ class RatingController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $validatedData = request()->validate([
-            'name' => 'required|unique:rating',
-            'value' => 'required'
-        ]);
-
-        Rating::whereId($id)->update($validatedData);
+        Rating::whereId($id)->update($this->validateRating());
 
         return redirect($this->home)->with('success', 'Rating Updated Successfully !!!');
     }
@@ -100,8 +108,22 @@ class RatingController extends Controller
      */
     public function destroy($id)
     {
-        $rating = Rating::findOrFail($id);
-        $rating->delete();
+        try{
+            $rating = Rating::findOrFail($id);
+            $rating->delete();
+        } catch (ModelNotFoundException $exception) {
+            return view('errors.notfound');
+        } catch (BadRequestHttpException $exception) {
+            throw $exception;
+        } catch (AccessDeniedHttpException $exception) {
+            throw $exception;
+        } catch (HttpException $exception) {
+            throw $exception;
+        } catch (\Exception $exception) {
+            GeneralUtility::logException($exception, __FUNCTION__);
+            // Throwing Internal Server Error Response In case of Unknown Errors.
+            throw new HttpException(500, ErrorConstant::INTERNAL_ERR);
+        }
 
         return redirect($this->home)->with('success', 'Rating Deleted Successfully !!!');
     }
@@ -117,5 +139,18 @@ class RatingController extends Controller
         $ratings = Rating::all();
 
         return response()->json($ratings, 200);
+    }
+
+    /**
+     * Validating the rating.
+     *
+     * @param  \App\rating  $rating
+     * @return \Illuminate\Http\Response
+     */
+    public function validateRating(){
+        return request()->validate([
+            'name' => 'required|unique:rating',
+            'value' => 'required'
+        ]);
     }
 }

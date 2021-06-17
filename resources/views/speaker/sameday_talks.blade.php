@@ -19,58 +19,11 @@ table th{
 
 @section ('content')
         
-        <!-- ============================================================== -->
-        <!-- Page wrapper  -->
-        <!-- ============================================================== -->
-        <div class="page-wrapper">
-            <!-- ============================================================== -->
-            <!-- Bread crumb and right sidebar toggle -->
-            <!-- ============================================================== -->
-            <div class="page-breadcrumb bg-white">
-                <div class="row align-items-center">
-                    <div class="col-lg-12 col-md-12 col-sm-12 col-xs-12">
-                        <h4 class="page-title">Speaker participated in more than one event on same day</h4>
-                    </div>
-                    <div class="col-lg-9 col-sm-8 col-md-8 col-xs-12">
-                    </div>
-                </div>
-                <!-- /.col-lg-12 -->
-            </div>
-            <!-- ============================================================== -->
-            <!-- End Bread crumb and right sidebar toggle -->
-            <!-- ============================================================== -->
-            <!-- ============================================================== -->
-            <!-- Container fluid  -->
-            <!-- ============================================================== -->
-            <div class="container-fluid">
-                @if ($message = Session::get('success'))
-                <div class="col-md-12 alert alert-success">
-                {{ $message }}
-                </div>
-                @endif
-                <table class="table table-striped">
-                    <thead>
-                        <tr>
-                            <th>SI No.</th>
-                            <th>Speaker Name</th>
-                            <th>Date</th>
-                            <th>Total Events Attended</th>
-                        </tr>
-                    </thead>
+    <!-- ============================================================== -->
+    <!-- Page wrapper  -->
+    <!-- ============================================================== -->
+    <div class="page-wrapper" id="app">
+        <samedaytalks-display></samedaytalks-display>
+    </div>
 
-                    <tbody id="table_body">
-                    
-                    </tbody>
-                </table>
-            </div>
-            <!-- ============================================================== -->
-            <!-- End Container fluid  -->
-            <!-- ============================================================== -->
-        </div>
 @endsection
-
-<script>
-window.onload = function() {
-    load_sameday_talks();
-}
-</script>

@@ -2,8 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Speaker;
+use App\Models\Speaker;
 use Illuminate\Http\Request;
+use App\Utilities\GeneralUtility;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class SpeakerController extends Controller
 {
@@ -37,11 +42,7 @@ class SpeakerController extends Controller
      */
     public function store(Request $request)
     {
-        $validatedData = request()->validate([
-            'name' => 'required|unique:rating'
-        ]);
-
-        Speaker::create($validatedData);
+        Speaker::create($this->validateSpeaker());
         return redirect($this->home)->with('success', 'Speaker Added Successfully !!!');
     }
 
@@ -64,7 +65,21 @@ class SpeakerController extends Controller
      */
     public function edit($id)
     {
-        $speaker = Speaker::findOrFail($id);
+        try{
+            $speaker = Speaker::findOrFail($id);
+        } catch (ModelNotFoundException $exception) {
+            return view('errors.notfound');
+        } catch (BadRequestHttpException $exception) {
+            throw $exception;
+        } catch (AccessDeniedHttpException $exception) {
+            throw $exception;
+        } catch (HttpException $exception) {
+            throw $exception;
+        } catch (\Exception $exception) {
+            GeneralUtility::logException($exception, __FUNCTION__);
+            // Throwing Internal Server Error Response In case of Unknown Errors.
+            throw new HttpException(500, ErrorConstant::INTERNAL_ERR);
+        }
 
         return view('speaker.edit', compact('speaker'));
     }
@@ -78,11 +93,7 @@ class SpeakerController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $validatedData = request()->validate([
-            'name' => 'required|unique:rating'
-        ]);
-
-        Speaker::whereId($id)->update($validatedData);
+        Speaker::whereId($id)->update($this->validateSpeaker());
 
         return redirect($this->home)->with('success', 'Speaker Updated Successfully !!!');
     }
@@ -95,8 +106,22 @@ class SpeakerController extends Controller
      */
     public function destroy($id)
     {
-        $speaker = Speaker::findOrFail($id);
-        $speaker->delete();
+        try{
+            $speaker = Speaker::findOrFail($id);
+            $speaker->delete();
+        } catch (ModelNotFoundException $exception) {
+            return view('errors.notfound');
+        } catch (BadRequestHttpException $exception) {
+            throw $exception;
+        } catch (AccessDeniedHttpException $exception) {
+            throw $exception;
+        } catch (HttpException $exception) {
+            throw $exception;
+        } catch (\Exception $exception) {
+            GeneralUtility::logException($exception, __FUNCTION__);
+            // Throwing Internal Server Error Response In case of Unknown Errors.
+            throw new HttpException(500, ErrorConstant::INTERNAL_ERR);
+        }
 
         return redirect($this->home)->with('success', 'Speaker Deleted Successfully !!!');
     }
@@ -125,5 +150,17 @@ class SpeakerController extends Controller
         $speakers = Speaker::all();
 
         return response()->json($speakers, 200);
+    }
+
+    /**
+     * Validating the speaker.
+     *
+     * @param  \App\Speaker  $speaker
+     * @return \Illuminate\Http\Response
+     */
+    public function validateSpeaker(){
+        return request()->validate([
+            'name' => 'required|unique:speaker'
+        ]);
     }
 }

@@ -2,20 +2,36 @@
 
 namespace App\Http\Controllers;
 
-use App\Talks;
-use App\Speaker;
-use App\Event;
-use App\Participants;
-use App\Tag;
+use App\Models\Talks;
+use App\Models\Speaker;
+use App\Models\Event;
+use App\Models\Participants;
+use App\Models\Tag;
 use App\User;
-use App\User_ratings;
+use App\Models\User_ratings;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use App\Services\TalksService;
+use App\Utilities\GeneralUtility;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class TalksController extends Controller
 {
     public $home = "/talks";
+
+    /**
+     * TalksController constructor.
+     *
+     * @param TalksService $talksService
+     */
+    public function __construct(TalksService $talksService)
+    {
+        $this->talksService = $talksService;
+    }
 
     /**
      * Display a listing of the resource.
@@ -24,9 +40,7 @@ class TalksController extends Controller
      */
     public function index()
     {
-        $speakers = Speaker::all();
-        $tags = Tag::all();
-        return view('talks.view', compact('speakers','tags'));
+        return view('talks.view');
     }
 
     /**
@@ -36,11 +50,8 @@ class TalksController extends Controller
      */
     public function create()
     {
-        $speakers = Speaker::all();
-        $events = Event::all();
-        $participants = User::where('role_id',2)->get();
-        $tags = Tag::all();
-        return view('talks.add', compact('speakers','events','participants','tags'));
+        $data = $this->talksService->getNontalksData();
+        return view('talks.add', $data);
     }
 
     /**
@@ -51,15 +62,7 @@ class TalksController extends Controller
      */
     public function store(Request $request)
     {
-        $validatedData = request()->validate([
-            'name' => 'required|unique:talks',
-            'title' => 'required|unique:talks',
-            'description' => 'required',
-            'speaker_id' => 'required',
-            'event_id' => 'required',
-            'participants' => 'required',
-            'tags' => 'required'
-        ]);
+        $validatedData = $this->validateTalks('');
 
         $validatedData['participants'] = json_encode($request->participants);
         $validatedData['tags'] = json_encode($request->tags);
@@ -88,13 +91,26 @@ class TalksController extends Controller
      */
     public function edit($id)
     {
-        $talk = Talks::findOrFail($id);
-        $speakers = Speaker::all();
-        $events = Event::all();
-        $participants = User::where('role_id',2)->get();
-        $tags = Tag::all();
+        try{
+            $talk = Talks::findOrFail($id);
+        } catch (ModelNotFoundException $exception) {
+            return view('errors.notfound');
+        } catch (BadRequestHttpException $exception) {
+            throw $exception;
+        } catch (AccessDeniedHttpException $exception) {
+            throw $exception;
+        } catch (HttpException $exception) {
+            throw $exception;
+        } catch (\Exception $exception) {
+            GeneralUtility::logException($exception, __FUNCTION__);
+            // Throwing Internal Server Error Response In case of Unknown Errors.
+            throw new HttpException(500, ErrorConstant::INTERNAL_ERR);
+        }
 
-        return view('talks.edit', compact('talk','speakers','events','participants','tags'));
+        $data = $this->talksService->getNontalksData();
+        $data['talk'] = $talk;
+
+        return view('talks.edit', $data);
     }
 
     /**
@@ -106,15 +122,7 @@ class TalksController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $validatedData = request()->validate([
-            'name' => 'required|unique:talks,name,'.$id,
-            'title' => 'required|unique:talks,title,'.$id,
-            'description' => 'required',
-            'speaker_id' => 'required',
-            'event_id' => 'required',
-            'participants' => 'required',
-            'tags' => 'required'
-        ]);
+        $validatedData = $this->validateTalks($id);
 
         $validatedData['participants'] = json_encode($request->participants);
         $validatedData['tags'] = json_encode($request->tags);
@@ -133,8 +141,22 @@ class TalksController extends Controller
      */
     public function destroy($id)
     {
-        $talks = Talks::findOrFail($id);
-        $talks->delete();
+        try{
+            $talks = Talks::findOrFail($id);
+            $talks->delete();
+        } catch (ModelNotFoundException $exception) {
+            return view('errors.notfound');
+        } catch (BadRequestHttpException $exception) {
+            throw $exception;
+        } catch (AccessDeniedHttpException $exception) {
+            throw $exception;
+        } catch (HttpException $exception) {
+            throw $exception;
+        } catch (\Exception $exception) {
+            GeneralUtility::logException($exception, __FUNCTION__);
+            // Throwing Internal Server Error Response In case of Unknown Errors.
+            throw new HttpException(500, ErrorConstant::INTERNAL_ERR);
+        }
 
         return redirect($this->home)->with('success', 'Talk Deleted Successfully !!!');
     }
@@ -147,27 +169,26 @@ class TalksController extends Controller
      */
     public function search(Request $request)
     {
-        $query = Talks::with(['speaker','event','user_ratings']);
-        
-        $query->leftJoin('user_ratings', 'talks.id', '=', 'user_ratings.talk_id');
-        $query->leftJoin('rating', 'rating.id', '=', 'user_ratings.rating_id');
+        $data = $this->talksService->search(request('speaker'),request('tag'));
 
-        $query->when(request('speaker', false), function ($q, $speaker) { 
-            return $q->where('speakers',$speaker);
-        });
+        return response()->json($data, 200);
+    }
 
-        $query->when(request('tag', false), function ($q, $tag) { 
-            return $q->whereJsonContains('tags',$tag);
-        });
-
-        $query->select('talks.*', DB::raw('AVG(rating.value) as rating'));
-        $query->groupBy('talks.id');
-
-        $talks = $query->get();
-        $participants = User::where('role_id',2)->get();
-        $tags = Tag::all();
-        //$talks = DB::table('talks')->whereJsonContains('speakers',$speaker)->get();
-
-        return response()->json(compact('talks','participants','tags'), 200);
+    /**
+     * Validating the talks.
+     *
+     * @param  \App\Talks  $talks
+     * @return \Illuminate\Http\Response
+     */
+    public function validateTalks($id){
+        return request()->validate([
+            'name' => 'required|unique:talks,name,'.$id,
+            'title' => 'required|unique:talks,title,'.$id,
+            'description' => 'required',
+            'speaker_id' => 'required',
+            'event_id' => 'required',
+            'participants' => 'required',
+            'tags' => 'required'
+        ]);
     }
 }
